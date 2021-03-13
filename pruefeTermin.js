@@ -2,14 +2,18 @@ export const pruefeTermin = (place, state) => {
 
      // Webseite aufrufen
        cy.visit('https://www.impfterminservice.de/impftermine', {timeout: 20000})
-       cy.contains('Auswahl bestätigen').click()
-       cy.getCookies()
+
+      // Cookie-Abfrage
+       cy.wait(1000).get('body').then(($body) => {
+          if ($body.text().includes('Auswahl bestätigen')) {
+                     cy.contains('Auswahl bestätigen').click().getCookies()
+            }
+        })
 
      // Bundesland auswählen
        cy.get(':nth-child(1) > .d-flex > .select2 > .selection > .select2-selection').click()
        cy.get('[formcontrolname="state"]').select(state.toString(),{force: true}).should('have.value',state.toString())
-       .invoke('val')
-       cy.getCookies()
+       .invoke('val').getCookies()
 
      // Impfzentrum auswählen
        cy.get(':nth-child(2) > .d-flex > .select2 > .selection > .select2-selection').click()
@@ -30,20 +34,26 @@ export const pruefeTermin = (place, state) => {
          })
          // Ende des umständlichen Teils
 
-       cy.get('button[type="submit"]').contains('Zum Impfzentrum').click()
-       cy.getCookies()
+       cy.get('button[type="submit"]').contains('Zum Impfzentrum').click().getCookies()
 
      // Impfanspruch verneinen
        cy.url().should('include', '/impftermine/service?plz=')
-       cy.contains('Auswahl bestätigen').click()
-       cy.getCookies()
+
+       // Cookie-Abfrage die Zweite
+        cy.wait(1000).get('body').then(($body) => {
+           if ($body.text().includes('Auswahl bestätigen')) {
+                cy.contains('Auswahl bestätigen').click().getCookies()
+             }
+         })
+
+       //cy.getCookies()
        cy.get('.ets-radio-wrapper > :nth-child(2) > span').click().wait(4500)
 
         cy.get('body').then(($body) => {
            if ($body.text().includes('keine freien Termine in Ihrer Region')) {
              throw new Error(`Keine Termine frei`)
                 } else {
-             cy.get('.ets-login-form-section-wrapper',{ log: false }).contains('Personalausweis oder ein anderer Lichtbildausweis').should('exist')
+             cy.get('.ets-login-form-section-wrapper').contains('Personalausweis oder ein anderer Lichtbildausweis').should('exist')
               }
          })
 }
